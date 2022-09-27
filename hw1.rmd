@@ -2,7 +2,7 @@
 title: "Assignment 1"
 author: "Andrew Tu"
 date: "9/27/2022"
-output: pdf_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -38,7 +38,7 @@ flights_2 <- flights %>%
   mutate(
     dep_time = ((dep_time %/% 100) * 60 + (dep_time %% 100))%%(24*60),
     sched_dep_time = ((sched_dep_time %/% 100) * 60 + (sched_dep_time %% 100))%%(24*60)
-    )%>%
+    )
 
 flights_2
 ```
@@ -46,7 +46,7 @@ flights_2
 ## Question 3
 Look at the number of canceled flights per day. Is there a pattern? Is the proportion of canceled flights related to the average delay? Use multiple dyplr operations, all on one line, concluding with ggplot(aes(x= ,y=)) + geom_point()
 
-```{r timestamp}
+```{r delay}
 flights_3 = flights_2 %>%
   group_by(year,month,day) %>%
   summarise(
