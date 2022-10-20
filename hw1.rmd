@@ -1,0 +1,70 @@
+---
+title: "Assignment 1"
+author: "Andrew Tu"
+date: "9/27/2022"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(nycflights13)
+library(tidyverse)
+```
+
+## Question 1
+Which plane (tailnum) has the worst on-time record?
+
+```{r deptime}
+flights%>%
+  filter(is.na(dep_time))%>%
+  nrow()
+
+```
+
+8255 flights have missing departure time
+
+```{r missing}
+which(colSums(is.na(flights))>0)
+
+```
+other than dep_time, the columns dep_delay, arr_time, arr_delay, tailnum, and air_time are also missing. Departure delay, arrival time, arrival delay and air time can be NA because a flight was cancelled, tailnum can be missing if it is an unregistered flight or a secret government chartered flight.
+
+
+## Question 2
+Currently dep_time and sched_dep_time are convenient to look at, but hard to compute with because they’re not really continuous numbers. Convert them to a more convenient representation of number of minutes since midnight.
+
+```{r timestamp}
+flights_2 <- flights %>% 
+  mutate(
+    dep_time = ((dep_time %/% 100) * 60 + (dep_time %% 100))%%(24*60),
+    sched_dep_time = ((sched_dep_time %/% 100) * 60 + (sched_dep_time %% 100))%%(24*60)
+    )
+
+flights_2
+```
+
+## Question 3
+Look at the number of canceled flights per day. Is there a pattern? Is the proportion of canceled flights related to the average delay? Use multiple dyplr operations, all on one line, concluding with ggplot(aes(x= ,y=)) + geom_point()
+
+```{r delay}
+flights_3 = flights_2 %>%
+  group_by(year,month,day) %>%
+  summarise(
+    daily_cancelled = sum(is.na(air_time)&is.na(dep_time)&is.na(arr_time)&is.na(arr_delay)),
+    mean_arr_delay = mean(arr_delay, na.rm = TRUE),
+    mean_dep_delay = mean(dep_delay, na.rm = TRUE)
+    )%>%
+  ungroup()%>%
+  select(c('daily_cancelled','mean_arr_delay','mean_dep_delay'))%>%
+  pivot_longer(cols = c('mean_arr_delay','mean_dep_delay'),names_to = 'delay_type', values_to = 'delay')
+
+ggplot(flights_3, aes(x = delay, y = daily_cancelled, color = delay_type))+
+  geom_point()+
+  labs(x = "Mean delay (minutes per day)", y = "Flights cancelled (per day)", color = 'Type of Delay')+
+  ggtitle('Flight delay and flight cancellation at JFK')+
+  scale_color_brewer(palette='Set1',labels=c('Arrival', 'Departure'))
+  
+
+```
+
+There appears to be a positive correlation between flight delays and flight cancellations of that day, however the correlation does not appear to be linearD

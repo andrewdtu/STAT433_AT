@@ -1,0 +1,78 @@
+---
+title: "hw3"
+author: "Andrew Tu"
+date: "2022-10-19"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(nycflights13)
+library(tidyverse)
+```
+
+# Q1
+Compute the average delay by destination, then join on the airports data frame so you can show the spatial distribution of delays. Here’s an easy way to draw a map of the United States:
+
+```{r q1}
+# airports %>%
+#   semi_join(flights, c("faa" = "dest")) %>%
+#   ggplot(aes(lon, lat)) +
+#     borders("state") +
+#     geom_point() +
+#     coord_quickmap()
+airport_loc = airports%>%
+  mutate(dest = faa)%>%
+  select(dest,lat,lon)
+
+flights_1 = flights%>%
+  group_by(dest)%>%
+  mutate(avg_delay = (dep_delay+arr_delay)/2)%>%
+  summarise(avg_delay = mean(avg_delay,na.rm = TRUE))%>%
+  left_join(airport_loc, 'dest')
+
+ggplot(flights_1,aes(lon, lat)) +
+  borders("state") +
+  geom_point(aes(color = avg_delay)) +
+  coord_quickmap()
+```
+
+# Q2 
+Add the location of the origin and destination (i.e. the lat and lon) to flights.
+
+
+```{r q2}
+
+airport_ori = airports%>%
+  rename(lat_ori = lat)%>%
+  rename(lon_ori =  lon)%>%
+  select(faa,lon_ori,lat_ori)
+
+airport_dest = airports%>%
+  rename(lat_dest = lat)%>%
+  rename(lon_dest =  lon)%>%
+  select(faa,lat_dest,lon_dest)
+
+flights%>%
+  left_join(airport_ori,c("origin" = "faa"))%>%
+  left_join(airport_dest,c("dest" = "faa"))
+```
+# q3
+Is there a relationship between the age of a plane and its delays?
+```{r q3}
+
+plane_age = planes%>%
+  mutate(age = 2013-year)%>%
+  select(tailnum,age)
+
+flights_3 = flights%>%
+  group_by(tailnum)%>%
+  mutate(avg_delay = (dep_delay+arr_delay)/2)%>%
+  summarise(avg_delay = mean(avg_delay,na.rm = TRUE))%>%
+  left_join(plane_age, 'tailnum')
+ggplot(flights_3,aes(age,avg_delay))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+```
+There doesn't appear to be any correlation between plane age and aggregate arrival and departure delay. There are a few outliers with high delays in the younger planes, alhough this could entirely be due to there being a greater number of planes under the ae of 25. The linear regression concurs with this finding.
